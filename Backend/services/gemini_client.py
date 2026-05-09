@@ -15,15 +15,12 @@ def call_gemini_multimodal(keyframe_paths: list[str], exercise_type: str) -> dic
     """
     api_key = os.environ.get("GEMINI_API_KEY")
 
-    # Sistema de seguridad: si no hay API Key, devolvemos el Stub para que no explote
     if not api_key or api_key == "your_key_here":
         print("⚠️ WARNING: GEMINI_API_KEY no configurada en el .env. Usando datos falsos.")
         return _get_stub_response(keyframe_paths)
 
-    # Inicializamos el cliente de Gemini
     client = genai.Client(api_key=api_key)
 
-    # Cargamos las imágenes extraídas desde la carpeta temp/
     images = []
     for path in keyframe_paths:
         try:
@@ -32,7 +29,6 @@ def call_gemini_multimodal(keyframe_paths: list[str], exercise_type: str) -> dic
         except Exception as e:
             print(f"Error al cargar la imagen {path}: {e}")
 
-    # El Prompt Maestro para el Hackathon
     prompt = f"""
     Eres un coach experto en biomecánica deportiva. Te estoy enviando imágenes secuenciales de una persona haciendo {exercise_type}.
     Por cada repetición completada hay 3 fotos (Inicio, Abajo, Fin).
