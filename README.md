@@ -26,7 +26,7 @@ RepLab uses a short side-view video to make that decision clearer.
 
 | Start | Upload | Review |
 |---|---|---|
-| `docs/screenshots/start.png` | `docs/screenshots/upload.png` | `docs/screenshots/review.png` |
+| `<img width="121" height="81" alt="small" src="https://github.com/user-attachments/assets/c71dc321-a267-4f05-9f9a-4a0a3ca9c99b" />` | `<img width="121" height="81" alt="small-4" src="https://github.com/user-attachments/assets/fe78afa5-60f3-4acd-9fca-44c04861e93b" /> | `<img width="121" height="81" alt="small-5" src="https://github.com/user-attachments/assets/175c2553-f2db-4fe4-9777-6677ef8261d4" />` |
 
 ---
 
