@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RepLab - Set Logger</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600&amp;family=Manrope:wght@400&amp;family=Space+Grotesk:wght@650;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#00dbe8",
+                        "on-tertiary-fixed-variant": "#304a5a",
+                        "surface-container-highest": "#2c363c",
+                        "tertiary": "#daeeff",
+                        "inverse-on-surface": "#273237",
+                        "background": "#0a151a",
+                        "tertiary-container": "#b8d3e8",
+                        "on-background": "#d9e4eb",
+                        "inverse-primary": "#00696f",
+                        "on-tertiary": "#193343",
+                        "surface-container": "#162126",
+                        "surface-variant": "#2c363c",
+                        "secondary-fixed-dim": "#64d4f7",
+                        "primary-fixed": "#78f5ff",
+                        "on-tertiary-container": "#425b6d",
+                        "surface-dim": "#0a151a",
+                        "surface-container-high": "#212b31",
+                        "surface-bright": "#303b40",
+                        "secondary-fixed": "#b5ebff",
+                        "on-surface-variant": "#bac9cb",
+                        "on-secondary": "#003543",
+                        "on-primary": "#00363a",
+                        "tertiary-fixed-dim": "#afcade",
+                        "outline": "#849495",
+                        "inverse-surface": "#d9e4eb",
+                        "on-tertiary-fixed": "#011e2d",
+                        "on-secondary-fixed": "#001f28",
+                        "error-container": "#93000a",
+                        "secondary-container": "#129dbe",
+                        "on-secondary-container": "#002e3a",
+                        "on-primary-fixed": "#002022",
+                        "surface-container-lowest": "#051014",
+                        "secondary": "#64d4f7",
+                        "on-error": "#690005",
+                        "primary": "#aef8ff",
+                        "tertiary-fixed": "#cbe6fb",
+                        "on-primary-fixed-variant": "#004f54",
+                        "primary-fixed-dim": "#00dbe8",
+                        "on-surface": "#d9e4eb",
+                        "surface-container-low": "#121d22",
+                        "error": "#ffb4ab",
+                        "surface": "#0a151a",
+                        "on-primary-container": "#006268",
+                        "outline-variant": "#3b494b",
+                        "primary-container": "#18e5f2",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#004e60"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "card-gap": "12px",
+                        "container-padding": "20px",
+                        "base": "8px",
+                        "screen-top-padding": "20px",
+                        "section-gap": "28px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["JetBrains Mono"],
+                        "display-md": ["Space Grotesk"],
+                        "data-metric": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "body-md": ["Manrope"],
+                        "headline-md": ["Space Grotesk"],
+                        "headline-lg": ["Space Grotesk"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["11px", { "lineHeight": "1.0", "letterSpacing": "0.12em", "fontWeight": "600" }],
+                        "display-md": ["36px", { "lineHeight": "1.1", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+                        "data-metric": ["22px", { "lineHeight": "1.0", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.05", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.25", "letterSpacing": "-0.015em", "fontWeight": "650" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.15", "letterSpacing": "-0.02em", "fontWeight": "650" }],
+                        "body-lg": ["18px", { "lineHeight": "1.55", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-[100px]">
+<!-- TopAppBar -->
+<header class="bg-background text-primary font-headline-md text-headline-md fixed top-0 w-full z-50 border-b border-outline-variant flex justify-between items-center h-16 px-gutter w-full transition-colors active:opacity-80 transition-opacity">
+<button class="text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<span class="font-display-md text-display-md font-bold text-primary">RepLab</span>
+<button class="text-primary hover:bg-surface-container-high px-4 py-2 rounded-full font-label-caps text-label-caps">
+            Live
+        </button>
+</header>
+<main class="pt-[80px] px-container-padding max-w-2xl mx-auto flex flex-col gap-section-gap">
+<!-- Header Section -->
+<section class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Bodyweight Squat</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Set 2 of 4</p>
+</div>
+<div class="bg-primary-container/10 border border-primary text-primary px-3 py-1 rounded-full flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="font-label-caps text-label-caps">Ready to analyze</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-4 leading-relaxed">
+                Log your set, upload a side-view clip, and RepLab will review how your reps looked.
+            </p>
+</section>
+<!-- Set Context Card -->
+<section class="bg-surface-container-high rounded-xl border border-outline-variant p-4 flex flex-col gap-4">
+<div class="grid grid-cols-3 gap-card-gap">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant">Reps</label>
+<input class="bg-surface-container-highest border border-outline-variant rounded-lg p-3 font-data-metric text-data-metric text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full" type="number" value="8"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant">Load</label>
+<input class="bg-surface-container-highest border border-outline-variant rounded-lg p-3 font-data-metric text-data-metric text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full" type="text" value="BW"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant">Difficulty</label>
+<input class="bg-surface-container-highest border border-outline-variant rounded-lg p-3 font-data-metric text-data-metric text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full" type="text" value="2 RIR"/>
+</div>
+</div>
+</section>
+<!-- Recording Checklist -->
+<section class="flex flex-col gap-3">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Recording Checklist</h2>
+<div class="flex flex-wrap gap-2">
+<div class="bg-primary/10 border border-primary text-primary px-3 py-1.5 rounded-full font-label-caps text-label-caps flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                    Side view
+                </div>
+<div class="bg-primary/10 border border-primary text-primary px-3 py-1.5 rounded-full font-label-caps text-label-caps flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                    Full body visible
+                </div>
+<div class="bg-surface-container-highest border border-outline-variant text-on-surface-variant px-3 py-1.5 rounded-full font-label-caps text-label-caps flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">radio_button_unchecked</span>
+                    Phone low
+                </div>
+<div class="bg-primary/10 border border-primary text-primary px-3 py-1.5 rounded-full font-label-caps text-label-caps flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                    3-8 reps
+                </div>
+<div class="bg-surface-container-highest border border-outline-variant text-on-surface-variant px-3 py-1.5 rounded-full font-label-caps text-label-caps flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">radio_button_unchecked</span>
+                    5-15 sec
+                </div>
+<div class="bg-surface-container-highest border border-outline-variant text-on-surface-variant px-3 py-1.5 rounded-full font-label-caps text-label-caps flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">radio_button_unchecked</span>
+                    Good lighting
+                </div>
+</div>
+</section>
+<!-- Video Upload Card (Selected State) -->
+<section class="flex flex-col gap-3">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider flex justify-between items-center">
+                 Upload set video
+                 <button class="text-primary hover:underline">Open Recording Guide</button>
+</h2>
+<div class="bg-surface-container-high border border-primary/50 rounded-xl p-4 flex flex-col gap-4 relative overflow-hidden">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 bg-surface-container-highest rounded-lg flex items-center justify-center shrink-0 border border-outline-variant overflow-hidden relative">
+<!-- Decorative Video Preview -->
+<div class="absolute inset-0 bg-gradient-to-br from-surface-container-highest to-surface-container-lowest"></div>
+<div class="absolute inset-x-0 bottom-0 h-1 bg-surface-container-high"><div class="h-full w-1/3 bg-primary"></div></div>
+<span class="material-symbols-outlined text-on-surface-variant relative z-10" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+<div class="flex-1 flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">squat_set_02.mp4</span>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant">0:15</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-caps text-label-caps text-primary">Ready</span>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mt-1">Side-view squat clip, 5-15 seconds.</p>
+</section>
+<!-- Primary CTA -->
+<section class="mt-8">
+<button class="w-full bg-primary text-on-primary font-headline-md text-headline-md py-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">analytics</span>
+                Analyze Set
+            </button>
+</section>
+</main>
+<!-- BottomNavBar omitted intentionally as it's a transactional/task-focused screen (logging a set) -->
+</body></html>
