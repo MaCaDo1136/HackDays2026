@@ -26,7 +26,7 @@ RepLab uses a short side-view video to make that decision clearer.
 
 | Start | Upload | Review |
 |---|---|---|
-| `<img width="121" height="81" alt="small" src="https://github.com/user-attachments/assets/c71dc321-a267-4f05-9f9a-4a0a3ca9c99b" />` | `<img width="121" height="81" alt="small-4" src="https://github.com/user-attachments/assets/fe78afa5-60f3-4acd-9fca-44c04861e93b" /> | `<img width="121" height="81" alt="small-5" src="https://github.com/user-attachments/assets/175c2553-f2db-4fe4-9777-6677ef8261d4" />` |
+| <img width="388" height="767" alt="Screenshot 2026-05-09 at 4 02 19 p m" src="https://github.com/user-attachments/assets/c0b575de-6749-4b13-97d3-84d2f9645b14" /> | <img width="399" height="782" alt="Screenshot 2026-05-09 at 4 02 49 p m" src="https://github.com/user-attachments/assets/8945d825-8555-4792-b29a-72a8b6db6406" /> | <img width="397" height="782" alt="Screenshot 2026-05-09 at 4 03 21 p m" src="https://github.com/user-attachments/assets/e7f0278c-131a-4e91-904c-03e41a749c35" /> |
 
 ---
 
