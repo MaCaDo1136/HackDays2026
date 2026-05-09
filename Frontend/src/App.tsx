@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   BarChart3,
@@ -17,8 +18,13 @@ import {
   Upload,
   Wrench,
 } from 'lucide-react'
+import {
+  analyzeSet,
+  keyframeUrl,
+  type AnalyzeSetResponse,
+  type ExerciseId,
+} from './services/api'
 
-type ExerciseId = 'push_up' | 'squat' | 'bicep_curl'
 type Screen = 'start' | 'guide' | 'logger' | 'processing' | 'review'
 
 type Exercise = {
@@ -69,22 +75,78 @@ const processingSteps = [
 function App() {
   const [screen, setScreen] = useState<Screen>('start')
   const [selectedExercise, setSelectedExercise] = useState<ExerciseId>('squat')
-  const [videoFileName, setVideoFileName] = useState('')
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [targetReps, setTargetReps] = useState(8)
+  const [completedReps, setCompletedReps] = useState(8)
+  const [rir, setRir] = useState(2)
+  const [result, setResult] = useState<AnalyzeSetResponse | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const exercise =
     exercises.find((item) => item.id === selectedExercise) ?? exercises[1]
-  const displayFileName = videoFileName || 'squat_set_02.mp4'
+  const displayFileName = videoFile?.name ?? 'squat_set_02.mp4'
 
   const goBack = () => {
     if (screen === 'guide') setScreen('start')
     if (screen === 'logger') setScreen('guide')
-    if (screen === 'processing') setScreen('logger')
+    if (screen === 'processing') {
+      abortRef.current?.abort()
+      setScreen('logger')
+    }
     if (screen === 'review') setScreen('logger')
+  }
+
+  const handleAnalyze = async () => {
+    if (!videoFile) {
+      setError('Please choose a side-view video before analyzing.')
+      return
+    }
+    setError(null)
+    setResult(null)
+    setScreen('processing')
+
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    try {
+      const data = await analyzeSet(
+        {
+          video: videoFile,
+          exercise: selectedExercise,
+          target_reps: targetReps,
+          completed_reps: completedReps,
+          rir,
+        },
+        controller.signal,
+      )
+      if (controller.signal.aborted) return
+      setResult(data)
+      setScreen('review')
+    } catch (err) {
+      if (controller.signal.aborted) return
+      const message =
+        err instanceof Error ? err.message : 'Could not analyze the set.'
+      setError(message)
+      setScreen('logger')
+    }
+  }
+
+  const cancelAnalysis = () => {
+    abortRef.current?.abort()
+    setScreen('logger')
   }
 
   return (
     <MobileShell>
-      <AppHeader screen={screen} onBack={screen === 'start' ? undefined : goBack} />
+      <AppHeader
+        screen={screen}
+        onBack={screen === 'start' ? undefined : goBack}
+        reviewTitle={exercise.label}
+        reviewCompletedReps={completedReps}
+        reviewFormScore={result?.form_score}
+      />
 
       {screen === 'start' && (
         <StartScreen
@@ -105,31 +167,56 @@ function App() {
       {screen === 'logger' && (
         <SetLoggerScreen
           exercise={exercise}
-          videoFileName={videoFileName}
-          onFileSelected={setVideoFileName}
+          videoFile={videoFile}
+          targetReps={targetReps}
+          completedReps={completedReps}
+          rir={rir}
+          error={error}
+          onFileSelected={setVideoFile}
+          onTargetRepsChange={setTargetReps}
+          onCompletedRepsChange={setCompletedReps}
+          onRirChange={setRir}
           onGuide={() => setScreen('guide')}
-          onAnalyze={() => setScreen('processing')}
+          onAnalyze={handleAnalyze}
         />
       )}
 
       {screen === 'processing' && (
         <ProcessingScreen
           fileName={displayFileName}
-          onCancel={() => setScreen('logger')}
-          onComplete={() => setScreen('review')}
+          onCancel={cancelAnalysis}
         />
       )}
 
-      {screen === 'review' && (
+      {screen === 'review' && result && (
         <ReviewScreen
           exercise={exercise}
           fileName={displayFileName}
+          result={result}
+          completedReps={completedReps}
           onSave={() => setScreen('start')}
           onTryNextSet={() => setScreen('logger')}
         />
       )}
     </MobileShell>
   )
+}
+
+function repScoreColor(score: number): {
+  bg: string
+  border: string
+  text: string
+} {
+  if (score >= 85) return { bg: 'bg-[#72e0a4]/30', border: 'border-[#72e0a4]/70', text: 'text-[#72e0a4]' }
+  if (score >= 70) return { bg: 'bg-[#aef8ff]/25', border: 'border-[#aef8ff]/60', text: 'text-[#aef8ff]' }
+  return { bg: 'bg-[#f1bd5a]/25', border: 'border-[#f1bd5a]/55', text: 'text-[#f1bd5a]' }
+}
+
+function keyframeForRep(paths: string[], rep: number | null | undefined): string | null {
+  if (!rep || rep < 1) return null
+  // Backend emits 3 keyframes per rep (start, bottom, top). Pick the bottom frame.
+  const baseIndex = (rep - 1) * 3
+  return paths[baseIndex + 1] ?? paths[baseIndex] ?? null
 }
 
 function MobileShell({ children }: { children: React.ReactNode }) {
@@ -145,9 +232,15 @@ function MobileShell({ children }: { children: React.ReactNode }) {
 function AppHeader({
   screen,
   onBack,
+  reviewTitle,
+  reviewCompletedReps,
+  reviewFormScore,
 }: {
   screen: Screen
   onBack?: () => void
+  reviewTitle?: string
+  reviewCompletedReps?: number
+  reviewFormScore?: number
 }) {
   if (screen === 'start') {
     return (
@@ -166,6 +259,15 @@ function AppHeader({
   }
 
   if (screen === 'review') {
+    const score = reviewFormScore
+    const scoreColor =
+      score === undefined
+        ? '#d9e4eb'
+        : score >= 85
+          ? '#72e0a4'
+          : score >= 70
+            ? '#aef8ff'
+            : '#f1bd5a'
     return (
       <header className="sticky top-0 z-20 border-b border-[#3b494b]/70 bg-[#0a151a]/95 px-5 py-4 backdrop-blur">
         <div className="flex items-center gap-4">
@@ -174,15 +276,26 @@ function AppHeader({
           </IconButton>
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-heading text-2xl font-bold leading-tight text-white">
-              Bodyweight Squat
+              {reviewTitle ?? 'Set review'}
             </h1>
             <div className="mt-2 flex items-center gap-3">
               <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d9e4eb]">
-                8 reps
+                {reviewCompletedReps ?? 0} reps
               </span>
-              <span className="rounded-md border border-[#f1bd5a]/40 bg-[#f1bd5a]/12 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#f1bd5a]">
-                Technique note
-              </span>
+              {score !== undefined && (
+                <span
+                  className="rounded-md px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em]"
+                  style={{
+                    color: scoreColor,
+                    borderColor: `${scoreColor}55`,
+                    backgroundColor: `${scoreColor}1f`,
+                    borderWidth: 1,
+                    borderStyle: 'solid',
+                  }}
+                >
+                  Form score {Math.round(score)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -505,14 +618,28 @@ function RecordingGuideCard() {
 
 function SetLoggerScreen({
   exercise,
-  videoFileName,
+  videoFile,
+  targetReps,
+  completedReps,
+  rir,
+  error,
   onFileSelected,
+  onTargetRepsChange,
+  onCompletedRepsChange,
+  onRirChange,
   onGuide,
   onAnalyze,
 }: {
   exercise: Exercise
-  videoFileName: string
-  onFileSelected: (fileName: string) => void
+  videoFile: File | null
+  targetReps: number
+  completedReps: number
+  rir: number
+  error: string | null
+  onFileSelected: (file: File) => void
+  onTargetRepsChange: (value: number) => void
+  onCompletedRepsChange: (value: number) => void
+  onRirChange: (value: number) => void
   onGuide: () => void
   onAnalyze: () => void
 }) {
@@ -524,7 +651,7 @@ function SetLoggerScreen({
             <h1 className="font-heading text-[45px] font-bold leading-[1.05] text-[#e6eef2]">
               {exercise.label}
             </h1>
-            <p className="mt-3 text-[22px] text-[#bac9cb]">Set 2 of 4</p>
+            <p className="mt-3 text-[22px] text-[#bac9cb]">Log your set</p>
           </div>
           <span className="mt-12 inline-flex items-center gap-3 rounded-full border border-[#aef8ff] bg-[#18e5f2]/10 px-5 py-2 font-mono text-[12px] font-semibold uppercase leading-tight tracking-[0.18em] text-[#aef8ff]">
             <span className="size-2.5 rounded-full bg-[#78f5ff]/70" />
@@ -537,7 +664,14 @@ function SetLoggerScreen({
         </p>
       </section>
 
-      <SetContextCard />
+      <SetContextCard
+        targetReps={targetReps}
+        completedReps={completedReps}
+        rir={rir}
+        onTargetRepsChange={onTargetRepsChange}
+        onCompletedRepsChange={onCompletedRepsChange}
+        onRirChange={onRirChange}
+      />
 
       <section className="space-y-4">
         <SectionLabel>Recording checklist</SectionLabel>
@@ -569,11 +703,23 @@ function SetLoggerScreen({
           </button>
         </div>
         <VideoUploadSlot
-          fileName={videoFileName}
+          fileName={videoFile?.name ?? ''}
           onFileSelected={onFileSelected}
         />
-        <p className="text-lg text-[#bac9cb]">Side-view squat clip, 5–15 seconds.</p>
+        <p className="text-lg text-[#bac9cb]">Side-view clip, 5–15 seconds.</p>
       </section>
+
+      {error && (
+        <article className="flex items-start gap-3 rounded-xl border border-[#f1bd5a]/60 bg-[#3a2a14] p-4">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#f1bd5a]" />
+          <div>
+            <p className="font-heading text-base font-bold text-[#f1bd5a]">
+              Analysis failed
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[#e6c98a]">{error}</p>
+          </div>
+        </article>
+      )}
 
       <BottomCTA>
         <PrimaryButton large onClick={onAnalyze}>
@@ -585,27 +731,58 @@ function SetLoggerScreen({
   )
 }
 
-function SetContextCard() {
-  const metrics = [
-    { label: 'Reps', value: '8', className: 'col-span-1' },
-    { label: 'Load', value: 'Bodyweight', className: 'col-span-2' },
-    { label: 'Difficulty', value: '2 RIR', className: 'col-span-2' },
+function SetContextCard({
+  targetReps,
+  completedReps,
+  rir,
+  onTargetRepsChange,
+  onCompletedRepsChange,
+  onRirChange,
+}: {
+  targetReps: number
+  completedReps: number
+  rir: number
+  onTargetRepsChange: (value: number) => void
+  onCompletedRepsChange: (value: number) => void
+  onRirChange: (value: number) => void
+}) {
+  const fields: {
+    label: string
+    value: number
+    onChange: (value: number) => void
+    suffix?: string
+    min: number
+    max: number
+  }[] = [
+    { label: 'Target', value: targetReps, onChange: onTargetRepsChange, min: 1, max: 99 },
+    { label: 'Done', value: completedReps, onChange: onCompletedRepsChange, min: 0, max: 99 },
+    { label: 'RIR', value: rir, onChange: onRirChange, min: 0, max: 10 },
   ]
 
   return (
     <section className="rounded-2xl border border-[#3b494b] bg-[#212b31] p-5 shadow-inner shadow-white/[0.02]">
-      <div className="grid grid-cols-5 gap-3">
-        {metrics.map(({ label, value, className }) => (
-          <div className={`min-w-0 ${className}`} key={label}>
+      <div className="grid grid-cols-3 gap-3">
+        {fields.map(({ label, value, onChange, min, max }) => (
+          <label className="min-w-0" key={label}>
             <p className="font-mono text-[12px] font-semibold uppercase tracking-[0.22em] text-[#bac9cb]">
               {label}
             </p>
             <div className="mt-2 grid h-[92px] place-items-center rounded-xl border border-[#3b494b] bg-[#2c363c] px-2">
-              <p className="max-w-full text-center font-heading text-[clamp(1.15rem,5.5vw,1.56rem)] font-bold leading-tight text-[#e6eef2]">
-                {value}
-              </p>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={min}
+                max={max}
+                value={Number.isFinite(value) ? value : 0}
+                onChange={(event) => {
+                  const parsed = Number(event.target.value)
+                  if (Number.isNaN(parsed)) return
+                  onChange(Math.max(min, Math.min(max, parsed)))
+                }}
+                className="w-full bg-transparent text-center font-heading text-[clamp(1.4rem,6vw,1.9rem)] font-bold leading-tight text-[#e6eef2] outline-none [appearance:textfield] focus:text-[#aef8ff] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
             </div>
-          </div>
+          </label>
         ))}
       </div>
     </section>
@@ -617,7 +794,7 @@ function VideoUploadSlot({
   onFileSelected,
 }: {
   fileName: string
-  onFileSelected: (fileName: string) => void
+  onFileSelected: (file: File) => void
 }) {
   return (
     <label className="block cursor-pointer rounded-2xl border border-[#78f5ff]/70 bg-[#212b31] p-5 transition hover:border-[#aef8ff]">
@@ -628,7 +805,7 @@ function VideoUploadSlot({
         onChange={(event) => {
           const file = event.target.files?.[0]
           if (file) {
-            onFileSelected(file.name)
+            onFileSelected(file)
           }
         }}
       />
@@ -669,26 +846,19 @@ function VideoUploadSlot({
 function ProcessingScreen({
   fileName,
   onCancel,
-  onComplete,
 }: {
   fileName: string
   onCancel: () => void
-  onComplete: () => void
 }) {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      setStep((current) => Math.min(current + 1, processingSteps.length - 1))
-    }, 520)
+      setStep((current) => (current + 1) % processingSteps.length)
+    }, 900)
 
-    const timeoutId = window.setTimeout(onComplete, 3000)
-
-    return () => {
-      window.clearInterval(intervalId)
-      window.clearTimeout(timeoutId)
-    }
-  }, [onComplete])
+    return () => window.clearInterval(intervalId)
+  }, [])
 
   return (
     <ScreenBody>
@@ -810,32 +980,59 @@ function AnalysisInfoCard() {
 function ReviewScreen({
   exercise,
   fileName,
+  result,
+  completedReps,
   onSave,
   onTryNextSet,
 }: {
   exercise: Exercise
   fileName: string
+  result: AnalyzeSetResponse
+  completedReps: number
   onSave: () => void
   onTryNextSet: () => void
 }) {
+  const { keyframe_paths, form_score, progression_recommendation, gemini_analysis } = result
+  const { rep_scores, best_rep, worst_rep, correction_cards } = gemini_analysis
+
+  const findingsText = buildFindingsText(form_score, completedReps, rep_scores)
+
   return (
     <ScreenBody compact>
-      <ReviewVideoCard fileName={fileName} />
+      <KeyframeGallery fileName={fileName} keyframePaths={keyframe_paths} />
 
-      <RepTimeline />
+      <RepTimeline repScores={rep_scores} bestRep={best_rep} worstRep={worst_rep} />
 
-      <BestNeedsWorkComparison />
-
-      <FindingsCard />
-
-      <CorrectionCard
-        title="Keep the same range"
-        body="Your last reps got shorter. Try matching the same depth on every rep before adding difficulty."
+      <BestNeedsWorkComparison
+        keyframePaths={keyframe_paths}
+        bestRep={best_rep}
+        worstRep={worst_rep}
+        repScores={rep_scores}
       />
 
+      <FindingsCard
+        formScore={form_score}
+        text={findingsText}
+      />
+
+      {correction_cards.length === 0 ? (
+        <CorrectionCard
+          title="No major issues detected"
+          body="Your form looked consistent across the set. Keep going with the same setup."
+        />
+      ) : (
+        correction_cards.map((card, index) => (
+          <CorrectionCard
+            key={`${card.rep}-${index}`}
+            title={`Rep ${card.rep}: ${card.issue}`}
+            body={card.tip}
+          />
+        ))
+      )}
+
       <NextActionCard
-        title="Repeat before adding weight"
-        body={`Your early reps were stable, but depth became less consistent later in the set.`}
+        title="Coach recommendation"
+        body={progression_recommendation}
         exercise={exercise.label}
       />
 
@@ -850,101 +1047,170 @@ function ReviewScreen({
   )
 }
 
-function ReviewVideoCard({ fileName }: { fileName: string }) {
+function buildFindingsText(
+  formScore: number,
+  completedReps: number,
+  repScores: { rep: number; score: number }[],
+): string {
+  const rounded = Math.round(formScore)
+  if (repScores.length === 0) {
+    return `Form score ${rounded}/100 across ${completedReps} reps.`
+  }
+  const best = repScores.reduce((acc, r) => (r.score > acc.score ? r : acc), repScores[0])
+  const worst = repScores.reduce((acc, r) => (r.score < acc.score ? r : acc), repScores[0])
+  if (best.rep === worst.rep) {
+    return `Form score ${rounded}/100. Reps held steady across the set.`
+  }
+  return `Form score ${rounded}/100. Best rep #${best.rep} (${best.score}) vs weakest rep #${worst.rep} (${worst.score}).`
+}
+
+function KeyframeGallery({
+  fileName,
+  keyframePaths,
+}: {
+  fileName: string
+  keyframePaths: string[]
+}) {
+  if (keyframePaths.length === 0) {
+    return (
+      <section className="overflow-hidden rounded-xl border border-[#3b494b] bg-[#121d22] p-5 text-center">
+        <p className="font-heading text-lg text-[#e6eef2]">No keyframes returned</p>
+        <p className="mt-2 text-sm text-[#bac9cb]">{fileName}</p>
+      </section>
+    )
+  }
+
   return (
-    <section className="overflow-hidden rounded-xl border border-[#3b494b] bg-[#121d22] p-3 shadow-lg shadow-black/20">
-      <div className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-lg bg-[#162126]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,rgba(255,255,255,0.06)_1px,transparent_0)] bg-[size:24px_24px] opacity-40" />
-        <span className="absolute left-3 top-3 rounded bg-[#303b40]/90 px-3 py-2 font-mono text-[9px] font-semibold text-[#d9e4eb]">
-          User video slot
+    <section className="space-y-3">
+      <div className="flex items-end justify-between">
+        <SectionLabel>Keyframes</SectionLabel>
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#bac9cb]">
+          {keyframePaths.length} frames
         </span>
-        <div className="z-10 grid size-[70px] place-items-center rounded-full border border-[#78f5ff]/35 bg-[#78f5ff]/10">
-          <Play className="size-9 text-[#aef8ff]" />
-        </div>
-        <div className="absolute inset-x-12 top-[57%] border-t border-dashed border-[#aef8ff]" />
-        <span className="absolute left-12 top-[52%] font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[#aef8ff]">
-          Target depth
-        </span>
-        <span className="absolute top-[58%] size-2.5 rounded-full bg-[#aef8ff]" />
-        <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-lg border border-[#3b494b]/70 bg-[#0a151a]/80 p-3 backdrop-blur">
-          <Play className="size-4 fill-current text-[#d9e4eb]" />
-          <div className="h-1 flex-1 rounded-full bg-[#2c363c]">
-            <div className="h-full w-4/5 rounded-full bg-[#aef8ff]" />
-          </div>
-          <span className="font-mono text-[10px] font-semibold text-[#d9e4eb]">
-            0:12 / 0:15
-          </span>
-        </div>
-        <div className="absolute bottom-20 text-center">
-          <h2 className="font-heading text-xl font-semibold text-[#e6eef2]">
-            Uploaded set video
-          </h2>
-          <p className="text-sm text-[#d9e4eb]">{fileName}</p>
+      </div>
+      <div className="-mx-5 overflow-x-auto px-5">
+        <div className="flex gap-3 pb-2">
+          {keyframePaths.map((path, index) => {
+            const rep = Math.floor(index / 3) + 1
+            const phase = ['Start', 'Bottom', 'Top'][index % 3]
+            return (
+              <figure
+                key={path}
+                className="flex w-40 shrink-0 flex-col gap-2 rounded-xl border border-[#3b494b] bg-[#121d22] p-2"
+              >
+                <img
+                  src={keyframeUrl(path)}
+                  alt={`Rep ${rep} ${phase}`}
+                  loading="lazy"
+                  className="aspect-[3/4] w-full rounded-lg object-cover"
+                />
+                <figcaption className="flex items-center justify-between font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#bac9cb]">
+                  <span className="text-[#aef8ff]">Rep {rep}</span>
+                  <span>{phase}</span>
+                </figcaption>
+              </figure>
+            )
+          })}
         </div>
       </div>
+      <p className="truncate text-sm text-[#bac9cb]">{fileName}</p>
     </section>
   )
 }
 
-function RepTimeline() {
-  const reps = [
-    'good',
-    'good',
-    'best',
-    'good',
-    'good',
-    'warn',
-    'warn',
-    'selected',
-  ]
+function RepTimeline({
+  repScores,
+  bestRep,
+  worstRep,
+}: {
+  repScores: { rep: number; score: number }[]
+  bestRep: number | null
+  worstRep: number | null
+}) {
+  if (repScores.length === 0) {
+    return (
+      <section className="space-y-3">
+        <SectionLabel>Rep timeline</SectionLabel>
+        <p className="rounded-lg border border-[#3b494b] bg-[#121d22] px-4 py-5 text-sm text-[#bac9cb]">
+          No per-rep scores returned.
+        </p>
+      </section>
+    )
+  }
 
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
         <SectionLabel>Rep timeline</SectionLabel>
         <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#aef8ff]">
-          Rep 8 selected
+          {repScores.length} reps
         </span>
       </div>
-      <div className="flex h-11 gap-1 rounded-lg border border-[#3b494b] bg-[#121d22] p-1">
-        {reps.map((state, index) => (
-          <button
-            aria-label={`Rep ${index + 1}`}
-            className={`flex-1 rounded-md border ${
-              state === 'best'
-                ? 'border-[#72e0a4]/70 bg-[#72e0a4]/35 text-[#72e0a4]'
-                : state === 'selected'
-                  ? 'border-2 border-[#aef8ff] bg-[#f1bd5a]/35 shadow-[0_0_8px_rgba(174,248,255,0.35)]'
-                  : state === 'warn'
-                    ? 'border-[#f1bd5a]/25 bg-[#f1bd5a]/30'
-                    : 'border-[#72e0a4]/15 bg-[#72e0a4]/20'
-            }`}
-            key={`${state}-${index}`}
-            type="button"
-          >
-            {state === 'best' && <span className="text-xs">★</span>}
-          </button>
-        ))}
+      <div className="flex h-12 gap-1 rounded-lg border border-[#3b494b] bg-[#121d22] p-1">
+        {repScores.map(({ rep, score }) => {
+          const palette = repScoreColor(score)
+          const isBest = bestRep === rep
+          const isWorst = worstRep === rep
+          return (
+            <div
+              key={rep}
+              className={`flex flex-1 items-center justify-center rounded-md border text-[10px] font-mono font-semibold ${palette.border} ${palette.bg} ${palette.text} ${
+                isBest ? 'ring-2 ring-[#72e0a4]' : ''
+              } ${isWorst ? 'ring-2 ring-[#f1bd5a]' : ''}`}
+              title={`Rep ${rep} – ${score}/100`}
+            >
+              <span>{score}</span>
+              {isBest && <span className="ml-0.5 text-[#72e0a4]">★</span>}
+            </div>
+          )
+        })}
       </div>
     </section>
   )
 }
 
-function BestNeedsWorkComparison() {
+function BestNeedsWorkComparison({
+  keyframePaths,
+  bestRep,
+  worstRep,
+  repScores,
+}: {
+  keyframePaths: string[]
+  bestRep: number | null
+  worstRep: number | null
+  repScores: { rep: number; score: number }[]
+}) {
+  if (bestRep === null && worstRep === null) return null
+
+  const scoreFor = (rep: number | null) =>
+    rep === null ? null : repScores.find((r) => r.rep === rep)?.score ?? null
+
   return (
     <section className="grid grid-cols-2 gap-3">
-      <FeedbackCard
-        accent="green"
-        eyebrow="Best Rep · 3"
-        marker="Consistent"
-        title="Full depth"
-      />
-      <FeedbackCard
-        accent="amber"
-        eyebrow="Needs Work · 8"
-        marker="Fatigue indicator"
-        title="Short depth"
-      />
+      {bestRep !== null && (
+        <FeedbackCard
+          accent="green"
+          eyebrow={`Best Rep · ${bestRep}`}
+          marker={scoreFor(bestRep) !== null ? `${scoreFor(bestRep)}/100` : 'Highest score'}
+          title="Cleanest form"
+          imageUrl={(() => {
+            const path = keyframeForRep(keyframePaths, bestRep)
+            return path ? keyframeUrl(path) : null
+          })()}
+        />
+      )}
+      {worstRep !== null && (
+        <FeedbackCard
+          accent="amber"
+          eyebrow={`Needs Work · ${worstRep}`}
+          marker={scoreFor(worstRep) !== null ? `${scoreFor(worstRep)}/100` : 'Lowest score'}
+          title="Focus area"
+          imageUrl={(() => {
+            const path = keyframeForRep(keyframePaths, worstRep)
+            return path ? keyframeUrl(path) : null
+          })()}
+        />
+      )}
     </section>
   )
 }
@@ -954,18 +1220,20 @@ function FeedbackCard({
   eyebrow,
   marker,
   title,
+  imageUrl,
 }: {
   accent: 'green' | 'amber'
   eyebrow: string
   marker: string
   title: string
+  imageUrl: string | null
 }) {
   const color = accent === 'green' ? '#72e0a4' : '#f1bd5a'
 
   return (
     <article
       className="rounded-xl border bg-[#212b31] p-4"
-      style={{ borderColor: accent === 'green' ? '#3b494b' : 'rgba(241,189,90,0.38)' }}
+      style={{ borderColor: accent === 'green' ? 'rgba(114,224,164,0.45)' : 'rgba(241,189,90,0.45)' }}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#bac9cb]">
@@ -973,13 +1241,25 @@ function FeedbackCard({
         </p>
         <CheckCircle2 className="size-5" style={{ color }} />
       </div>
-      <div className="relative mt-4 grid aspect-square place-items-end overflow-hidden rounded-lg border border-[#3b494b]/60 bg-[#121d22] p-4">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#051014] to-transparent" />
-        <div className="relative w-full text-center">
+      <div className="relative mt-4 aspect-square overflow-hidden rounded-lg border border-[#3b494b]/60 bg-[#121d22]">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={title}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-[10px] font-mono uppercase tracking-[0.14em] text-[#849495]">
+            No frame
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#051014] via-transparent to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-3 pb-3 text-center">
           <h3 className="font-heading text-lg font-bold" style={{ color }}>
             {title}
           </h3>
-          <p className="mt-1 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-[#bac9cb]">
+          <p className="mt-1 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-[#d9e4eb]">
             {marker}
           </p>
         </div>
@@ -988,18 +1268,25 @@ function FeedbackCard({
   )
 }
 
-function FindingsCard() {
+function FindingsCard({
+  formScore,
+  text,
+}: {
+  formScore: number
+  text: string
+}) {
+  const rounded = Math.round(formScore)
+  const palette = repScoreColor(rounded)
   return (
     <article className="flex gap-4 rounded-xl border border-[#3b494b] bg-[#162126] p-5">
-      <div className="grid size-10 shrink-0 place-items-center rounded-full bg-[#2c363c] text-[#d9e4eb]">
-        <BarChart3 className="size-5" />
+      <div
+        className={`grid size-12 shrink-0 place-items-center rounded-full border ${palette.border} ${palette.bg} ${palette.text} font-heading text-base font-bold`}
+      >
+        {rounded}
       </div>
       <div>
         <SectionLabel>Findings</SectionLabel>
-        <p className="mt-3 text-lg leading-7 text-[#e6eef2]">
-          Depth dropped after rep 5. Fatigue likely caused shorter range near the
-          end of the set.
-        </p>
+        <p className="mt-3 text-lg leading-7 text-[#e6eef2]">{text}</p>
       </div>
     </article>
   )
