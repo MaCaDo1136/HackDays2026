@@ -5,7 +5,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Background
 from fastapi.responses import JSONResponse
 
 from cv.pipeline import extract_keyframes
-from database.manager import get_all_logs, save_workout_log
+from database.manager import get_all_logs, get_recent_corrections, save_workout_log
 from services.gemini_client import call_gemini_multimodal
 from services.progression import calculate_progression
 
@@ -74,14 +74,16 @@ async def analyze_set(
     except IOError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
-    gemini_result = call_gemini_multimodal(keyframe_paths, exercise)
+    past_corrections = get_recent_corrections(exercise)
+    gemini_result = call_gemini_multimodal(keyframe_paths, exercise, past_corrections)
 
     progression = calculate_progression(
         completed_reps, target_reps, rir, form_score
     )
 
     log_id = save_workout_log(
-        exercise, target_reps, completed_reps, rir, form_score
+        exercise, target_reps, completed_reps, rir, form_score,
+        comments=gemini_result.get("correction_cards"),
     )
 
     files_to_delete = [str(video_path)] + keyframe_paths
