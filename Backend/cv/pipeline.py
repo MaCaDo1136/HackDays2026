@@ -8,14 +8,17 @@ from cv.pose_detector import PoseDetector
 TEMP_DIR = Path("temp")
 
 # Exercise configuration
-# Each entry defines how to measure, validate, and state-machine a rep.
-#
 # angle_points : (p1, p2, p3) MediaPipe landmark IDs – p2 is the vertex joint.
 # aux_points   : list of (p1, p2, p3) for secondary angles used in form checks.
 # per_range    : (angle_at_bottom, angle_at_top) → mapped to (0%, 100%).
 # form_check   : (primary_angle, aux_angles) → bool; must be True at start.
-# bottom_check : True when the rep's lowest point is reached.
-# top_check    : True when the rep's highest point is reached.
+# bottom_check : strict geometric standard for a correct bottom position.
+# top_check    : strict geometric standard for a correct top position.
+#
+# Rep quality uses per% equivalents of these strict standards:
+#   per_min_this_rep <= 5  (≈ bottom_check depth)
+#   per_max_this_rep >= 95 (≈ top_check extension)
+# Both must be met for a rep to be labelled "good"; otherwise "bad_rom".
 EXERCISE_CONFIGS: dict[str, dict] = {
     "push_up": {
         # Elbow angle: left shoulder(11) → elbow(13) → wrist(15)
@@ -50,6 +53,11 @@ EXERCISE_CONFIGS: dict[str, dict] = {
     },
 }
 
+# Frames of per-history used to smooth the direction trend.
+_SMOOTH_WINDOW = 5
+# Minimum per% change across the window needed to register a new direction.
+_MIN_CHANGE = 2.0
+
 
 def _save_frame(frame: np.ndarray, rep_tag: str, position: str) -> str:
     TEMP_DIR.mkdir(exist_ok=True)
@@ -60,18 +68,23 @@ def _save_frame(frame: np.ndarray, rep_tag: str, position: str) -> str:
 
 def extract_keyframes(video_path: str, exercise_type: str) -> tuple[list[str], float]:
     """
-    Process a workout video and extract 3 annotated keyframes per rep:
-      - repN_start.jpg  – top/start position (arms/legs extended)
-      - repN_bottom.jpg – deepest point of the rep
-      - repN_end.jpg    – return to top position
+    Process a workout video and extract annotated keyframes per rep using
+    direction-change (peak/valley) detection instead of fixed ROM thresholds.
 
-    form_score (0–100) is a range-of-motion quality proxy:
-      - depth_score    = 100 minus the average per% at the bottom (lower = deeper = better)
-      - extension_score = average per% at the top (higher = fuller extension = better)
-      - form_score     = mean of the two
+    Saved filenames encode the rep number and ROM quality:
+      repN_good_start.jpg    / repN_bad_rom_start.jpg
+      repN_good_bottom.jpg   / repN_bad_rom_bottom.jpg
+      repN_good_end.jpg      / repN_bad_rom_end.jpg   (omitted for incomplete reps)
 
-    Raises ValueError for unsupported exercise types.
-    Raises IOError if the video cannot be opened.
+    A rep is "good" only when per_min_this_rep <= 5 (full depth) AND
+    per_max_this_rep >= 95 (full extension). Any rep that reverses direction before
+    meeting both strict standards is saved as "bad_rom" so the multimodal AI can
+    generate appropriate correction cards.
+
+    form_score (0–100) is the mean of per-rep scores:
+      raw_score = ((100 - bottom_per%) + top_per%) / 2
+      bad_rom reps are capped at 50, so a set of shallow reps scores in the 40s–50s
+      rather than inflating the overall number.
     """
     config = EXERCISE_CONFIGS.get(exercise_type)
     if config is None:
@@ -86,23 +99,28 @@ def extract_keyframes(video_path: str, exercise_type: str) -> tuple[list[str], f
 
     saved_paths: list[str] = []
     form_valid = False
-    # 0 = expecting bottom next (going down), 1 = expecting top next (coming up)
-    direction = 0
     rep_count = 0
-    pending_start_frame = None  # Last "top" frame buffered to use as the rep's start image
 
-    # ROM quality accumulators
-    per_min_this_rep = 100.0   # Tracks deepest point while going down
-    per_max_this_rep = 0.0     # Tracks highest point while coming up
-    bottom_depths: list[float] = []
-    top_extensions: list[float] = []
+    per_history: list[float] = []
+    current_direction: str | None = None  # "up" | "down"
+
+    # Track the actual extreme frame/per within the current movement phase.
+    phase_min_per = 100.0
+    phase_min_frame: np.ndarray | None = None
+    phase_max_per = 0.0
+    phase_max_frame: np.ndarray | None = None
+
+    pending_start_frame: np.ndarray | None = None
+    pending_bottom: tuple[np.ndarray, float] | None = None  # (frame, per) at valley
+    in_rep = False  # True after a valley is detected, waiting for the next peak
+
+    rep_scores: list[float] = []
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        # Draw skeleton annotations onto the frame before any saving
         frame = detector.find_pose(frame, draw=True)
         lm_list = detector.find_position(frame, draw=False)
         if not lm_list:
@@ -113,61 +131,113 @@ def extract_keyframes(video_path: str, exercise_type: str) -> tuple[list[str], f
 
         aux_angles: list[float] = []
         for ap1, ap2, ap3 in config.get("aux_points", []):
-            # Secondary angles drawn without extra annotation to keep frames clean
-            aux_angles.append(detector.find_angle(
-                frame, ap1, ap2, ap3, draw=False))
+            aux_angles.append(detector.find_angle(frame, ap1, ap2, ap3, draw=False))
 
         per = float(
-            np.clip(np.interp(primary_angle, config["per_range"], (0, 100)), 0.0, 100.0))
+            np.clip(np.interp(primary_angle, config["per_range"], (0, 100)), 0.0, 100.0)
+        )
 
-        # --- Wait for valid starting position (top of the movement) ---
+        # Wait for a valid starting position (top of the movement).
         if not form_valid:
             if config["form_check"](primary_angle, aux_angles):
                 form_valid = True
+                current_direction = "up"  # we're at the top; first movement will go down
+                phase_max_per = per
+                phase_max_frame = frame.copy()
                 pending_start_frame = frame.copy()
             continue
 
-        # --- Track completion-percentage extremes for form scoring ---
-        if direction == 0:
-            per_min_this_rep = min(per_min_this_rep, per)
+        per_history.append(per)
+        if len(per_history) > _SMOOTH_WINDOW:
+            per_history.pop(0)
+
+        # Update per-phase extremes on every frame.
+        if per < phase_min_per:
+            phase_min_per = per
+            phase_min_frame = frame.copy()
+        if per > phase_max_per:
+            phase_max_per = per
+            phase_max_frame = frame.copy()
+
+        if len(per_history) < _SMOOTH_WINDOW:
+            continue
+
+        # Determine trend over the smoothing window.
+        trend = per_history[-1] - per_history[0]
+        if abs(trend) < _MIN_CHANGE:
+            new_direction = current_direction  # too noisy to call
+        elif trend < 0:
+            new_direction = "down"
         else:
-            per_max_this_rep = max(per_max_this_rep, per)
+            new_direction = "up"
 
-        # Keep refreshing the start-frame buffer while still near the top
-        if per >= 90 and direction == 0:
-            pending_start_frame = frame.copy()
+        if new_direction == current_direction or new_direction is None:
+            continue
 
-        # --- Transition: top → bottom ---
-        if per <= 5 and direction == 0 and config["bottom_check"](primary_angle, aux_angles):
-            rep_tag = f"rep{rep_count + 1}"
-            if pending_start_frame is not None:
-                saved_paths.append(_save_frame(
-                    pending_start_frame, rep_tag, "start"))
-            saved_paths.append(_save_frame(frame, rep_tag, "bottom"))
-            bottom_depths.append(per_min_this_rep)
-            per_min_this_rep = 100.0
-            direction = 1
+        # ── Direction changed ──────────────────────────────────────────────
+        if new_direction == "up":
+            # Valley detected: person was going down, now going up → bottom of rep.
+            pending_bottom = (
+                phase_min_frame.copy() if phase_min_frame is not None else frame.copy(),
+                phase_min_per,
+            )
+            in_rep = True
+            # Reset phase tracking for the upward movement.
+            phase_min_per = per
+            phase_min_frame = frame.copy()
+            phase_max_per = per
+            phase_max_frame = frame.copy()
 
-        # --- Transition: bottom → top (rep complete) ---
-        elif per >= 95 and direction == 1 and config["top_check"](primary_angle, aux_angles):
-            rep_tag = f"rep{rep_count + 1}"
-            saved_paths.append(_save_frame(frame, rep_tag, "end"))
-            top_extensions.append(per_max_this_rep)
-            per_max_this_rep = 0.0
-            rep_count += 1
-            direction = 0
-            # Buffer this top frame immediately as the start of the next rep
-            pending_start_frame = frame.copy()
+        else:  # new_direction == "down"
+            # Peak detected: person was going up, now going down → top of rep.
+            if in_rep and pending_bottom is not None:
+                rep_count += 1
+                rep_tag = f"rep{rep_count}"
+                bottom_frame, bottom_per = pending_bottom
+                quality = "good" if bottom_per <= 5 and phase_max_per >= 95 else "bad_rom"
+
+                if pending_start_frame is not None:
+                    saved_paths.append(
+                        _save_frame(pending_start_frame, rep_tag, f"{quality}_start")
+                    )
+                saved_paths.append(_save_frame(bottom_frame, rep_tag, f"{quality}_bottom"))
+                end_frame = phase_max_frame if phase_max_frame is not None else frame.copy()
+                saved_paths.append(_save_frame(end_frame, rep_tag, f"{quality}_end"))
+
+                raw_score = ((100.0 - bottom_per) + phase_max_per) / 2.0
+                rep_score = min(raw_score, 50.0) if quality == "bad_rom" else raw_score
+                rep_scores.append(rep_score)
+                in_rep = False
+                pending_bottom = None
+
+            # This peak is the start frame for the next rep.
+            pending_start_frame = (
+                phase_max_frame.copy() if phase_max_frame is not None else frame.copy()
+            )
+            # Reset phase tracking for the downward movement.
+            phase_min_per = per
+            phase_min_frame = frame.copy()
+            phase_max_per = 0.0
+            phase_max_frame = None
+
+        current_direction = new_direction
 
     cap.release()
 
-    if bottom_depths and top_extensions:
-        # lower bottom → higher score
-        depth_score = 100.0 - float(np.mean(bottom_depths))
-        # higher top   → higher score
-        extension_score = float(np.mean(top_extensions))
-        form_score = round((depth_score + extension_score) / 2.0, 1)
-    else:
-        form_score = 0.0
+    # Persist an incomplete rep: bottom reached but video ended before return to top.
+    if in_rep and pending_bottom is not None:
+        rep_count += 1
+        rep_tag = f"rep{rep_count}"
+        bottom_frame, bottom_per = pending_bottom
+        quality = "good" if bottom_per <= 5 and phase_max_per >= 95 else "bad_rom"
+        if pending_start_frame is not None:
+            saved_paths.append(_save_frame(pending_start_frame, rep_tag, f"{quality}_start"))
+        saved_paths.append(_save_frame(bottom_frame, rep_tag, f"{quality}_bottom"))
+        # top extension = 0 since the rep never completed
+        raw_score = (100.0 - bottom_per) / 2.0
+        rep_score = min(raw_score, 50.0) if quality == "bad_rom" else raw_score
+        rep_scores.append(rep_score)
+
+    form_score = round(float(np.mean(rep_scores)), 1) if rep_scores else 0.0
 
     return saved_paths, form_score

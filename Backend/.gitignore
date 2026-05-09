@@ -5,3 +5,4 @@ temp/
 .venv/
 replab.db
 .DS_Store
+assets/
