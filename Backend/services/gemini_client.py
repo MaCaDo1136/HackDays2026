@@ -40,24 +40,29 @@ def call_gemini_multimodal(
     history_section = _build_history_section(past_corrections)
 
     prompt = f"""
-    Eres un coach experto en biomecánica deportiva. Te estoy enviando imágenes secuenciales de una persona haciendo {exercise_type}.
-    Por cada repetición completada hay 3 fotos (Inicio, Abajo, Fin).
+    You are an expert sports biomechanics coach. I am sending you sequential images of a person performing {exercise_type}.
+    For each completed repetition there are 3 photos (Start, Bottom, End).
     {history_section}
-    Analiza la técnica a lo largo de la serie y devuelve un objeto JSON ESTRICTO usando EXACTAMENTE este esquema:
+    Analyze the technique across the whole set and return a STRICT JSON object using EXACTLY this schema:
     {{
         "rep_scores": [{{"rep": 1, "score": 85}}],
         "best_rep": 1,
         "worst_rep": 2,
-        "correction_cards": [{{"rep": 2, "issue": "Hips dropping", "tip": "Squeeze glutes to maintain straight line."}}]
+        "correction_cards": [{{"rep": 2, "issue": "Hips dropping", "tip": "Squeeze your glutes to keep your body in a straight line."}}]
     }}
 
-    Reglas:
-    1. Califica cada repetición del 0 al 100.
-    2. Identifica la mejor y la peor repetición por su número.
-    3. Genera 1 o 2 'correction_cards' solo para las repeticiones donde notes errores claros.
-    4. Si detectas un error que ya apareció en sesiones anteriores, menciona explícitamente que es un patrón recurrente en el campo 'issue' (ej: "[Recurrente] Elbows flaring").
-    5. Si un error anterior ya NO aparece en esta sesión, puedes añadir una correction_card positiva con issue "Mejora detectada" y el tip celebrando el progreso.
-    6. Devuelve ÚNICAMENTE el JSON crudo, sin bloques de código markdown (` ```json `), ni saludos, ni texto extra.
+    Rules:
+    1. Score each repetition from 0 to 100.
+    2. Identify the best and worst repetition by its number.
+    3. Generate 1 or 2 'correction_cards' only for repetitions where you notice clear mistakes.
+    4. If you detect a mistake that already appeared in previous sessions, explicitly mention it is a recurring pattern in the 'issue' field (e.g., "[Recurring] Elbows flaring out").
+    5. If a previous mistake is NO longer present in this session, you may add a positive correction_card with issue "Improvement detected" and a tip celebrating the progress.
+    6. Return ONLY the raw JSON, with no markdown code blocks (` ```json `), no greetings, and no extra text.
+    7. MANDATORY LANGUAGE: ALL text inside 'issue' and 'tip' fields MUST be written 100% in simple, beginner-friendly English. The app is for people who are new to working out, so:
+       - Use everyday words anyone can understand. Avoid jargon, anatomical terms, and gym slang.
+       - Instead of "glutes" say "butt muscles". Instead of "scapular retraction" say "pull your shoulder blades back". Instead of "hip hinge" say "bend at your hips".
+       - Keep tips short, friendly, and actionable (one clear instruction per tip).
+       - Do NOT use any Spanish or other languages. English only.
     """
 
     try:
