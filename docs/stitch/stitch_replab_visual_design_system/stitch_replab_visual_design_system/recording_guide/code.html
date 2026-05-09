@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RepLab - Recording Guide</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600&amp;family=Manrope:wght@400&amp;family=Space+Grotesk:wght@650;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#d9e4eb",
+                        "primary-fixed": "#78f5ff",
+                        "surface-container-lowest": "#051014",
+                        "on-secondary-fixed": "#001f28",
+                        "tertiary-fixed-dim": "#afcade",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-low": "#121d22",
+                        "on-error": "#690005",
+                        "background": "#0a151a",
+                        "on-tertiary-container": "#425b6d",
+                        "on-primary-container": "#006268",
+                        "surface-container-highest": "#2c363c",
+                        "on-surface-variant": "#bac9cb",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#303b40",
+                        "inverse-primary": "#00696f",
+                        "secondary-container": "#129dbe",
+                        "on-tertiary": "#193343",
+                        "surface-tint": "#00dbe8",
+                        "on-secondary-container": "#002e3a",
+                        "on-tertiary-fixed-variant": "#304a5a",
+                        "surface-dim": "#0a151a",
+                        "primary": "#aef8ff",
+                        "primary-fixed-dim": "#00dbe8",
+                        "secondary": "#64d4f7",
+                        "inverse-surface": "#d9e4eb",
+                        "surface-variant": "#2c363c",
+                        "on-tertiary-fixed": "#011e2d",
+                        "tertiary-container": "#b8d3e8",
+                        "surface-container-high": "#212b31",
+                        "surface": "#0a151a",
+                        "error-container": "#93000a",
+                        "tertiary-fixed": "#cbe6fb",
+                        "outline-variant": "#3b494b",
+                        "on-secondary-fixed-variant": "#004e60",
+                        "inverse-on-surface": "#273237",
+                        "on-surface": "#d9e4eb",
+                        "outline": "#849495",
+                        "tertiary": "#daeeff",
+                        "primary-container": "#18e5f2",
+                        "on-primary": "#00363a",
+                        "surface-container": "#162126",
+                        "on-primary-fixed": "#002022",
+                        "secondary-fixed": "#b5ebff",
+                        "on-primary-fixed-variant": "#004f54",
+                        "on-secondary": "#003543",
+                        "secondary-fixed-dim": "#64d4f7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "screen-top-padding": "20px",
+                        "card-gap": "12px",
+                        "container-padding": "20px",
+                        "section-gap": "28px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Space Grotesk", "sans-serif"],
+                        "display-md": ["Space Grotesk", "sans-serif"],
+                        "display-lg": ["Space Grotesk", "sans-serif"],
+                        "body-md": ["Manrope", "sans-serif"],
+                        "headline-lg": ["Space Grotesk", "sans-serif"],
+                        "data-metric": ["Space Grotesk", "sans-serif"],
+                        "label-caps": ["JetBrains Mono", "monospace"],
+                        "body-lg": ["Manrope", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "1.25", "letterSpacing": "-0.015em", "fontWeight": "650" }],
+                        "display-md": ["36px", { "lineHeight": "1.1", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.05", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.15", "letterSpacing": "-0.02em", "fontWeight": "650" }],
+                        "data-metric": ["22px", { "lineHeight": "1.0", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-caps": ["11px", { "lineHeight": "1.0", "letterSpacing": "0.12em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.55", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen relative pb-40">
+<!-- TopAppBar -->
+<header class="w-full sticky top-0 z-50 bg-background border-b border-outline-variant flex items-center justify-between px-gutter h-16 w-full">
+<button aria-label="Go back" class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform flex items-center justify-center p-2 -ml-2">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex flex-col items-center justify-center flex-1">
+<span class="font-headline-md text-headline-md text-primary tracking-tight">RepLab</span>
+</div>
+<div class="w-10"></div> <!-- Spacer to balance back button -->
+</header>
+<main class="flex flex-col gap-section-gap px-container-padding pt-screen-top-padding">
+<!-- Header Text -->
+<section class="flex flex-col gap-2">
+<h1 class="font-headline-lg text-headline-lg text-on-background">Record your set correctly</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">A better setup helps RepLab review your reps more clearly.</p>
+</section>
+<!-- Hero Setup Card -->
+<section class="bg-surface-container rounded-xl border border-outline-variant overflow-hidden flex flex-col">
+<img alt="Technical illustration of phone setup" class="w-full h-auto border-b border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAg_waIfgtGLVVNCl9prGm6TeTgw22hngyUEgryie2CqlUy2xrzq1DcciIyNXYi8DFcyVRiYr_8f0q7lKVvWiQIgKEPyAtpog_4Q45t_vKQQhC8hdwWe7bTcCaKATUWh7pZ12IurWmhvMFP20baYE7RC0E78NhxRbMzBRwzFOP6cNw7F3BvCFY1ZsCV_3mkFv_HnWpm8ohy0ovHhyMbVCfmrWy_A6lzAxqGhrE7y7HrIJ_OKv41ql6OeS9gK8xji42AHEBxNsBuY7g"/>
+<div class="p-4 flex flex-col gap-2">
+<h2 class="font-headline-md text-headline-md text-primary">Simple setup</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Place your phone low, record from the side, and keep your full body in frame.</p>
+</div>
+</section>
+<!-- Checklist Section -->
+<section class="flex flex-col gap-4">
+<h3 class="font-headline-md text-headline-md text-on-background">Before you record</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<!-- Item 1 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-3 flex gap-3 items-start">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col gap-1">
+<span class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Side view</span>
+<span class="font-body-md text-sm text-on-surface-variant">Record from your side, not the front.</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-3 flex gap-3 items-start">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col gap-1">
+<span class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Phone low</span>
+<span class="font-body-md text-sm text-on-surface-variant">Place the phone near floor level.</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-3 flex gap-3 items-start">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col gap-1">
+<span class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Full body visible</span>
+<span class="font-body-md text-sm text-on-surface-variant">Keep head, feet, and hands inside the frame.</span>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-3 flex gap-3 items-start">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col gap-1">
+<span class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Good lighting</span>
+<span class="font-body-md text-sm text-on-surface-variant">Make sure your movement is easy to see.</span>
+</div>
+</div>
+<!-- Item 5 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-3 flex gap-3 items-start">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col gap-1">
+<span class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">3-8 reps</span>
+<span class="font-body-md text-sm text-on-surface-variant">Record enough reps to compare consistency.</span>
+</div>
+</div>
+<!-- Item 6 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-3 flex gap-3 items-start">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col gap-1">
+<span class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">5-15 seconds</span>
+<span class="font-body-md text-sm text-on-surface-variant">Keep the clip short and easy to analyze.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Tip Card -->
+<section class="bg-surface-container border border-outline-variant border-l-4 border-l-primary rounded-xl p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+<span class="font-headline-md text-[18px] font-bold">Quick tip</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Use a water bottle, gym bottle, shoe, or bag to support your phone. You do not need a tripod.</p>
+</section>
+</main>
+<!-- Bottom Sticky Actions -->
+<footer class="fixed bottom-0 w-full bg-background border-t border-outline-variant p-container-padding flex flex-col gap-3 z-50">
+<button class="w-full bg-primary text-on-primary font-headline-md text-headline-md py-4 rounded-full flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-lg">
+            Got it, start upload
+        </button>
+<button class="w-full border border-outline-variant text-on-surface font-headline-md text-[18px] py-4 rounded-full flex items-center justify-center hover:bg-surface-container-low active:scale-95 transition-all">
+            Back to exercise
+        </button>
+</footer>
+</body></html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Rep Lab Review</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#303b40",
+                        "on-tertiary-fixed": "#011e2d",
+                        "on-surface": "#d9e4eb",
+                        "on-error": "#690005",
+                        "tertiary-container": "#b8d3e8",
+                        "surface-container": "#162126",
+                        "surface-tint": "#00dbe8",
+                        "tertiary-fixed-dim": "#afcade",
+                        "surface-container-lowest": "#051014",
+                        "inverse-surface": "#d9e4eb",
+                        "background": "#0a151a",
+                        "surface-dim": "#0a151a",
+                        "surface-container-low": "#121d22",
+                        "primary-fixed-dim": "#00dbe8",
+                        "on-primary": "#00363a",
+                        "on-tertiary": "#193343",
+                        "on-secondary": "#003543",
+                        "outline": "#849495",
+                        "primary-container": "#18e5f2",
+                        "error": "#ffb4ab",
+                        "secondary-container": "#129dbe",
+                        "on-primary-fixed-variant": "#004f54",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#004e60",
+                        "tertiary": "#daeeff",
+                        "on-primary-fixed": "#002022",
+                        "surface": "#0a151a",
+                        "on-secondary-fixed": "#001f28",
+                        "primary-fixed": "#78f5ff",
+                        "tertiary-fixed": "#cbe6fb",
+                        "surface-variant": "#2c363c",
+                        "error-container": "#93000a",
+                        "secondary-fixed": "#b5ebff",
+                        "on-secondary-container": "#002e3a",
+                        "on-tertiary-fixed-variant": "#304a5a",
+                        "secondary": "#64d4f7",
+                        "surface-container-highest": "#2c363c",
+                        "secondary-fixed-dim": "#64d4f7",
+                        "surface-container-high": "#212b31",
+                        "outline-variant": "#3b494b",
+                        "on-primary-container": "#006268",
+                        "primary": "#aef8ff",
+                        "on-tertiary-container": "#425b6d",
+                        "inverse-on-surface": "#273237",
+                        "on-background": "#d9e4eb",
+                        "on-surface-variant": "#bac9cb",
+                        "inverse-primary": "#00696f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "screen-top-padding": "20px",
+                        "base": "8px",
+                        "gutter": "16px",
+                        "container-padding": "20px",
+                        "card-gap": "12px",
+                        "section-gap": "28px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Space Grotesk"],
+                        "body-md": ["Manrope"],
+                        "headline-lg": ["Space Grotesk"],
+                        "display-md": ["Space Grotesk"],
+                        "data-metric": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "label-caps": ["JetBrains Mono"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "1.25", "letterSpacing": "-0.015em", "fontWeight": "650" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.15", "letterSpacing": "-0.02em", "fontWeight": "650" }],
+                        "display-md": ["36px", { "lineHeight": "1.1", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+                        "data-metric": ["22px", { "lineHeight": "1.0", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.05", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+                        "label-caps": ["11px", { "lineHeight": "1.0", "letterSpacing": "0.12em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.55", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased pb-32 bg-[#05080A]">
+<!-- Header (Task-Focused Sub-page) -->
+<header class="flex flex-col gap-base px-container-padding pt-screen-top-padding pb-4 sticky top-0 bg-background/90 backdrop-blur-md z-40 border-b border-outline-variant/30">
+<div class="flex items-center gap-4">
+<button class="p-2 -ml-2 rounded-full hover:bg-surface-variant transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex-1 flex flex-col">
+<h1 class="font-headline-md text-headline-md text-on-surface">Bodyweight Squat</h1>
+<div class="flex items-center gap-3 mt-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant">8 REPS</span>
+<span class="font-label-caps text-label-caps bg-[#FFB300]/20 text-[#FFB300] px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-[#FFB300]/30"><span class="material-symbols-outlined text-[14px]">info</span> TECHNIQUE NOTE</span>
+</div>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-variant transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</header>
+<main class="flex flex-col gap-section-gap px-container-padding mt-6">
+<!-- Hero Visual: Video Card -->
+<section class="relative bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant shadow-lg flex flex-col"><div class="relative w-full aspect-[4/3] bg-surface-container flex flex-col items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0); background-size: 24px 24px;"></div>
+<div class="absolute top-3 left-3 bg-surface-bright/80 backdrop-blur px-2 py-1 rounded border border-outline-variant/30">
+<span class="font-label-caps text-[9px] text-on-surface-variant">User video slot</span>
+</div>
+<div class="flex flex-col items-center gap-4 z-10">
+<div class="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-4xl">play_arrow</span>
+</div>
+<div class="text-center">
+<h4 class="font-headline-md text-[18px] text-on-surface">Uploaded set video</h4>
+<p class="font-body-md text-sm text-on-surface-variant">Side-view squat clip appears here</p>
+</div>
+</div>
+<div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+<svg class="absolute inset-0 w-full h-full">
+<line stroke="#aef8ff" stroke-dasharray="4 4" stroke-width="1.5" x1="10%" x2="90%" y1="70%" y2="70%"></line>
+<text fill="#aef8ff" font-family="JetBrains Mono" font-size="10px" font-weight="600" style="letter-spacing: 0.1em;" x="12%" y="68%">TARGET DEPTH</text>
+<circle cx="50%" cy="75%" fill="#aef8ff" r="4"></circle>
+</svg>
+</div>
+<div class="absolute bottom-4 left-4 right-4 flex items-center gap-3 bg-surface/80 backdrop-blur-md p-2 rounded-lg border border-outline-variant/50">
+<button class="text-on-surface"><span class="material-symbols-outlined text-sm">play_arrow</span></button>
+<div class="flex-1 h-1 bg-surface-variant rounded-full relative">
+<div class="absolute left-0 top-0 bottom-0 w-[80%] bg-primary rounded-full"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">0:12 / 0:15</span>
+</div>
+</div></section>
+<!-- Rep Timeline -->
+<section class="flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant">REP TIMELINE</h3>
+<span class="font-label-caps text-label-caps text-primary">REP 8 SELECTED</span>
+</div>
+<div class="flex gap-1 h-10 w-full bg-surface-container-low p-1 rounded-lg border border-outline-variant"><button class="flex-1 rounded-md bg-[#4ADE80]/20 border border-[#4ADE80]/10" title="Rep 1"></button>
+<button class="flex-1 rounded-md bg-[#4ADE80]/20 border border-[#4ADE80]/10" title="Rep 2"></button>
+<button class="flex-1 rounded-md bg-[#4ADE80]/40 border border-[#4ADE80]/50 flex items-center justify-center" title="Rep 3 - Best">
+<span class="material-symbols-outlined text-[14px] text-[#4ADE80]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<button class="flex-1 rounded-md bg-[#4ADE80]/20 border border-[#4ADE80]/10" title="Rep 4"></button>
+<button class="flex-1 rounded-md bg-[#4ADE80]/20 border border-[#4ADE80]/10" title="Rep 5"></button>
+<button class="flex-1 rounded-md bg-[#FFB300]/30 border border-[#FFB300]/20" title="Rep 6"></button>
+<button class="flex-1 rounded-md bg-[#FFB300]/30 border border-[#FFB300]/20" title="Rep 7"></button>
+<button class="flex-1 rounded-md bg-[#FFB300]/40 border-2 border-primary shadow-[0_0_8px_rgba(174,248,255,0.3)]" title="Rep 8 - Selected"></button></div>
+</section>
+<!-- Comparison Bento Grid -->
+<section class="grid grid-cols-2 gap-card-gap"><div class="bg-surface-container-high rounded-xl p-4 border border-outline-variant/30 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Best Rep · 3</span>
+<span class="material-symbols-outlined text-[#4ADE80] text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="w-full aspect-square bg-surface-variant/40 rounded-lg overflow-hidden border border-outline-variant/20 relative">
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent flex flex-col items-center justify-end pb-3">
+<span class="font-data-metric text-[16px] text-[#4ADE80]">Full depth</span>
+<span class="font-label-caps text-[9px] text-on-surface-variant/70">CONSISTENT</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-high rounded-xl p-4 border border-[#FFB300]/20 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Needs Work · 8</span>
+<span class="material-symbols-outlined text-[#FFB300] text-[18px]" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="w-full aspect-square bg-surface-variant/40 rounded-lg overflow-hidden border border-outline-variant/20 relative">
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent flex flex-col items-center justify-end pb-3">
+<span class="font-data-metric text-[16px] text-[#FFB300]">Short depth</span>
+<span class="font-label-caps text-[9px] text-on-surface-variant/70">FATIGUE INDICATOR</span>
+</div>
+</div>
+</div></section>
+<!-- Findings & Correction Stack -->
+<section class="flex flex-col gap-card-gap">
+<!-- Findings Card -->
+<div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant flex gap-4 bg-surface-container-high/40">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant">analytics</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="font-label-caps text-label-caps text-on-surface-variant mb-1">FINDINGS</h4>
+<p class="font-body-md text-body-md text-on-surface">Depth dropped after rep 5. Fatigue likely caused shorter range near the end of the set.</p>
+</div>
+</div>
+<!-- Correction Card -->
+<div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant flex gap-4 bg-surface-container-high/40">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">build</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="font-label-caps text-label-caps text-on-surface-variant mb-1">CORRECTION</h4>
+<h5 class="font-headline-md text-[18px] text-primary mb-1">Keep the same range</h5>
+<p class="font-body-md text-body-md text-on-surface-variant">Your last reps got shorter. Try matching the same depth on every rep before adding difficulty.</p>
+</div>
+</div>
+<!-- Recommendation Card (Highlighted) -->
+<div class="bg-gradient-to-br from-surface-container-high to-surface-container-low rounded-xl p-6 border border-primary/40 relative overflow-hidden mt-2">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col gap-3 relative z-10">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary">lightbulb</span>
+<h4 class="font-label-caps text-label-caps text-primary tracking-widest">NEXT STEPS</h4>
+</div>
+<h3 class="font-headline-lg text-[24px] text-on-surface leading-tight">Repeat before adding weight</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Your early reps were stable, but depth became less consistent later in the set. Focus on hitting parallel for all 8 reps before progressing.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action Bar -->
+<div class="fixed bottom-0 left-0 w-full bg-[#0A151A]/95 backdrop-blur-xl border-t border-outline-variant/20 px-container-padding py-6 flex flex-col gap-3 z-50"><button class="w-full bg-primary hover:bg-primary-container text-on-primary font-headline-md text-[16px] py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(174,248,255,0.15)] active:scale-[0.98]">
+<span class="material-symbols-outlined">save</span>
+            Save Review
+        </button>
+<button class="w-full border border-outline/30 hover:bg-surface-variant/50 text-on-surface font-headline-md text-[16px] py-3.5 rounded-full transition-colors">
+            Try Next Set
+        </button></div>
+</body></html>
