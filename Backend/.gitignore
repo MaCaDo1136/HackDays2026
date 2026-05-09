@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+temp/
+.venv/
+replab.db
+.DS_Store
